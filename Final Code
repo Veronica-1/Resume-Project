@@ -1,0 +1,471 @@
+import pandas as pd
+import numpy as np
+import xlrd
+
+# function to change batting order
+def change_batting_order(team_name, players_full):
+    print('Current {} batting order:\n'.format(team_name))
+    
+    players_list = []
+    for i in range(len(players_full)):
+        if i <= 8:
+            print(i + 1, end = ' ')
+            print(players_full.iloc[i].name)
+        players_list.append(players_full.iloc[i].name)
+
+    approve = input('\nWould you like to change this order? (Y/N) ')
+    print()
+    
+    while True:
+        if approve.upper() == 'N':
+            print('This batting order will be used.')
+            players = players_full.iloc[0:9]
+            break
+        elif approve.upper() == 'Y':
+            print('You will set the batting order!\n')
+            print('Available players and their probabilities to reach base:\n')
+            print(players_full.sort_values('Out'))
+            print('\nEnter the name of the players you would like to bat. Names are case sensitive.\n')
+
+            batter = []
+            for i in range(9):
+                while True:
+                    prompt = 'Batter ' + str(i + 1) + ': '
+                    inp_player = input(prompt)
+                    if(inp_player in players_list):
+                        batter.append(inp_player)
+                        players_list.remove(inp_player)
+                        break
+                    else:
+                        print('\nInputted player could not be found. Player names are case sensitive. Please select from this list:\n')
+                        print(players_list)
+                        print()
+
+            players = players_full.reindex([batter[0], batter[1], batter[2], batter[3], batter[4], batter[5], batter[6], batter[7], batter[8]])
+            break
+        else:
+            approve = input('Please enter "Y" or "N": ')
+    return(players)
+    
+
+
+# function to simulate innings
+def simulate_innings(inning_num, m_outs, players, start):
+    player_stats = pd.DataFrame(index = players.index.copy(), columns = ['Singles','Doubles','Triples','Homeruns','Outs','Walks']).fillna(0)
+    inning_stats = pd.DataFrame(index = ['Runs','LeftonBase'], columns = ['Inning1','Inning2','Inning3','Inning4','Inning5','Inning6','Inning7','Inning8', 'Inning9']).fillna(0)
+    outs = 0
+    runs = 0
+    bases = {"first": 0, "second": 0, "third": 0}
+    count = 0
+    
+    #start at a specific player if necessary
+    j = start         
+    while outs < m_outs: 
+       
+        #go from specific player --> 9 then start for loop for remainder
+        while j < 9: 
+            player_number = j
+            if outs % 3 == 0 and outs / 3 == inning_num:
+    
+                #Add runs and players on base to inning_stats
+                inning_stats.iat[0, inning_num - 1] += runs
+                inning_stats.iat[1, inning_num - 1] += sum(bases.values())
+                
+                #Reset inning scores
+                bases = {"first": 0, "second": 0, "third": 0}
+                runs = 0
+                count = 0
+                inning_num += 1
+                    
+            #Determine play based on probability 
+            play = ['single', 'double', 'triple', 'homerun', 'walk', 'out']
+            prob = players.iloc[j]
+            play = np.random.choice(a = play, p = prob)
+            #print(play)
+    
+            #Update player stats & move around bases depending on play
+            if play == "out":
+                outs += 1
+                player_stats.iat[j,4] += 1
+                
+                #Break when outs is > max
+                if outs == m_outs:
+                   
+                    inning_stats.iat[0, 8] += runs
+                    inning_stats.iat[1, 8] += sum(bases.values())
+                    break           
+                
+            #Update plate positions
+            if play == "single" :
+                if bases['third'] == 1:
+                    runs += 1
+                    bases['third'] = 0
+                if bases['second'] == 1:
+                    bases['third'] += 1
+                    bases['second'] = 0
+                if bases['first'] == 1:
+                    bases['second'] += 1
+                    bases['first'] = 0
+                bases['first'] += 1
+                player_stats.iat[j,0] += 1
+                
+            if play == "walk":
+                if bases['first'] == 1:
+                    bases['second'] += 1
+                    bases['first'] = 0
+                if bases['second'] > 1:
+                    bases['third'] += 1
+                    bases['second'] -= 1
+                if bases['third'] > 1:
+                    runs += 1
+                    bases['third'] -= 1
+                bases['first'] += 1
+                player_stats.iat[j,5] += 1
+            
+            if play == "double":
+                if bases['first'] == 1:
+                    bases['third'] += 1
+                    bases['first'] = 0
+                if bases['second'] == 1:
+                    runs += 1
+                    bases['second'] = 0
+                if bases['third'] >= 1:
+                    runs += 1
+                    bases['third'] -= 1
+                bases['second'] += 1
+                player_stats.iat[j,1] += 1
+                
+            if play == "triple":
+                if bases['first'] == 1:
+                    runs += 1
+                    bases['first'] = 0
+                if bases['second'] == 1:
+                    runs += 1
+                    bases['second'] = 0
+                if bases['third'] == 1:
+                    runs += 1
+                    bases['third'] = 0
+                bases['third'] += 1
+                player_stats.iat[j,2] += 1
+                
+            if play == "homerun":
+                if bases['first'] == 1:
+                    runs += 1
+                    bases['first'] = 0
+                if bases['second'] == 1:
+                    runs += 1
+                    bases['second'] = 0
+                if bases['third'] == 1:
+                    runs += 1
+                    bases['third'] = 0
+                runs += 1
+                player_stats.iat[j,3] += 1  
+                
+            
+            j += 1
+    
+        #Loop through 9 batters (normal)
+        for i in range(0,9):    
+            
+            #Keep track of batters in play
+            count += 1  
+            player_number = i
+            
+            
+            #When outs hits 3, reset inning scores
+            if outs % 3 == 0 and outs / 3 == inning_num:
+    
+                #Add runs and players on base to inning_stats
+                inning_stats.iat[0, inning_num - 1] += runs
+                inning_stats.iat[1, inning_num - 1] += sum(bases.values())
+                
+                #Reset inning scores
+                bases = {"first": 0, "second": 0, "third": 0}
+                runs = 0
+                count = 0
+                inning_num += 1
+                    
+            #Determine play based on probability 
+            play = ['single', 'double', 'triple', 'homerun', 'walk', 'out']
+            prob = players.iloc[i]
+            play = np.random.choice(a = play, p = prob)
+            #print(play)
+    
+            #Update player stats & move around bases depending on play
+            if play == "out":
+                outs += 1
+                player_stats.iat[i,4] += 1
+                
+                #Break when outs is > max
+                if outs == m_outs:
+                   
+                    inning_stats.iat[0, 8] += runs
+                    inning_stats.iat[1, 8] += sum(bases.values())
+                    break           
+                
+            #Update plate positions
+            if play == "single" :
+                if bases['third'] == 1:
+                    runs += 1
+                    bases['third'] = 0
+                if bases['second'] == 1:
+                    bases['third'] += 1
+                    bases['second'] = 0
+                if bases['first'] == 1:
+                    bases['second'] += 1
+                    bases['first'] = 0
+                bases['first'] += 1
+                player_stats.iat[i,0] += 1
+                
+            if play == "walk":
+                if bases['first'] == 1:
+                    bases['second'] += 1
+                    bases['first'] = 0
+                if bases['second'] > 1:
+                    bases['third'] += 1
+                    bases['second'] -= 1
+                if bases['third'] > 1:
+                    runs += 1
+                    bases['third'] -= 1
+                bases['first'] += 1
+                player_stats.iat[i,5] += 1
+            
+            if play == "double":
+                if bases['first'] == 1:
+                    bases['third'] += 1
+                    bases['first'] = 0
+                if bases['second'] == 1:
+                    runs += 1
+                    bases['second'] = 0
+                if bases['third'] >= 1:
+                    runs += 1
+                    bases['third'] -= 1
+                bases['second'] += 1
+                player_stats.iat[i,1] += 1
+                
+            if play == "triple":
+                if bases['first'] == 1:
+                    runs += 1
+                    bases['first'] = 0
+                if bases['second'] == 1:
+                    runs += 1
+                    bases['second'] = 0
+                if bases['third'] == 1:
+                    runs += 1
+                    bases['third'] = 0
+                bases['third'] += 1
+                player_stats.iat[i,2] += 1
+                
+            if play == "homerun":
+                if bases['first'] == 1:
+                    runs += 1
+                    bases['first'] = 0
+                if bases['second'] == 1:
+                    runs += 1
+                    bases['second'] = 0
+                if bases['third'] == 1:
+                    runs += 1
+                    bases['third'] = 0
+                runs += 1
+                player_stats.iat[i,3] += 1  
+
+    return player_stats, inning_stats, player_number
+
+def full_game_simulation(num_games, away_t, home_t, home_players, away_players):
+    
+    #create tables to track stats
+    br_table = pd.DataFrame(index = [away_t, home_t], columns = ['R/G', 'G', 'PA', 'AB', 'R', 'H', '2B', '3B', 'HR', 'BB']).fillna(0)
+    all_scores = pd.DataFrame(index = np.arange(1, num_games + 1), columns = [away_t, home_t, 'Winner']).fillna(0)    
+    
+    for i in range(num_games):
+        # Away team
+        inning, max_outs = 1, 27
+        away_player_stats, away_inning_stats, a_player_number = simulate_innings(inning, max_outs, away_players, 0)
+        away_inning_stats['Totals'] = away_inning_stats['Inning1'] + away_inning_stats['Inning2'] + away_inning_stats['Inning3'] + away_inning_stats['Inning4'] + away_inning_stats['Inning5'] + away_inning_stats['Inning6'] + away_inning_stats['Inning7'] + away_inning_stats['Inning8'] + away_inning_stats['Inning9']
+        
+        # Home team
+        inning, max_outs = 1, 24
+        home_player_stats, home_inning_stats, h_player_number = simulate_innings(inning, max_outs, home_players, 0)
+        home_inning_stats['Totals'] = home_inning_stats['Inning1'] + home_inning_stats['Inning2'] + home_inning_stats['Inning3'] + home_inning_stats['Inning4'] + home_inning_stats['Inning5'] + home_inning_stats['Inning6'] + home_inning_stats['Inning7'] + home_inning_stats['Inning8'] + home_inning_stats['Inning9']
+        
+        ##This is where it goes after the break at 24 outs: (due to bball rules of home/away)
+        
+        if home_inning_stats.iat[0, -1] > away_inning_stats.iat[0, -1]:
+            all_scores.loc[i+1, away_t] = away_inning_stats.iat[0, -1]
+            all_scores.loc[i+1, home_t] = home_inning_stats.iat[0, -1]
+            all_scores.loc[i+1, 'Winner'] = home_t
+            if num_games == 1:
+                print('\nFinal score: ',away_inning_stats['Totals']['Runs'], ' - ',home_inning_stats['Totals']['Runs'], '\n')
+                print(f"The {home_t} win the game!\n")
+            
+        # Play one more innning if the home team is not winning -> start on most recent home player + 1
+        else:
+           inning, max_outs = 9, 3
+           home_player_stats_final, home_inning_stats_final, p_dummy = simulate_innings(inning, max_outs, home_players, h_player_number+1)
+           home_player_stats = home_player_stats + home_player_stats_final
+           home_inning_stats = home_inning_stats + home_inning_stats_final
+           home_inning_stats['Totals'] = home_inning_stats['Inning1'] + home_inning_stats['Inning2'] + home_inning_stats['Inning3'] + home_inning_stats['Inning4'] + home_inning_stats['Inning5'] + home_inning_stats['Inning6'] + home_inning_stats['Inning7'] + home_inning_stats['Inning8'] + home_inning_stats['Inning9']
+           
+           # Finalize Scores
+           all_scores.loc[i+1, away_t] = away_inning_stats.iat[0, -1]
+           all_scores.loc[i+1, home_t] = home_inning_stats.iat[0, -1]
+           if num_games == 1:
+               print('\nFinal score: ',away_inning_stats['Totals']['Runs'], ' - ',home_inning_stats['Totals']['Runs'], '\n')
+           if home_inning_stats.iat[0,-1] > away_inning_stats.iat[0,-1]:
+               all_scores.loc[i+1, 'Winner'] = home_t
+               if num_games == 1:
+                   print(f"{home_t} wins the game!\n")
+           elif home_inning_stats.iat[0,-1] == away_inning_stats.iat[0,-1]: 
+               all_scores.loc[i+1, 'Winner'] = 'Tie'
+               if num_games == 1:
+                   print("It's a tie!\n")
+           else:
+               all_scores.loc[i+1, 'Winner'] = away_t
+               if num_games == 1:
+                    print(f"\nThe {away_t} win the game!\n")
+       
+        # update BR table
+        br_table['G'] += 1
+        
+        br_table['2B'][away_t] += sum(away_player_stats['Doubles'])
+        br_table['2B'][home_t] += sum(home_player_stats['Doubles'])
+        br_table['3B'][away_t] += sum(away_player_stats['Triples'])
+        br_table['3B'][home_t] += sum(home_player_stats['Triples'])
+        br_table['HR'][away_t] += sum(away_player_stats['Homeruns'])
+        br_table['HR'][home_t] += sum(home_player_stats['Homeruns'])
+        
+        br_table['BB'][away_t] += sum(away_player_stats['Walks'])
+        br_table['BB'][home_t] += sum(home_player_stats['Walks'])
+        
+        br_table['H'][away_t] += sum(away_player_stats['Singles'] + away_player_stats['Doubles'] + away_player_stats['Triples'] + away_player_stats['Homeruns'])
+        br_table['H'][home_t] += sum(home_player_stats['Singles'] + home_player_stats['Doubles'] + home_player_stats['Triples'] + home_player_stats['Homeruns'])
+        
+        br_table['AB'][away_t] += sum(away_player_stats['Singles'] + away_player_stats['Doubles'] + away_player_stats['Triples'] + away_player_stats['Homeruns'] + away_player_stats['Outs'])
+        br_table['AB'][home_t] += sum(home_player_stats['Singles'] + home_player_stats['Doubles'] + home_player_stats['Triples'] + home_player_stats['Homeruns'] + home_player_stats['Outs'])
+
+    
+        br_table['R'][away_t] += away_inning_stats.iat[0, -1]
+        br_table['R'][home_t] += home_inning_stats.iat[0, -1]
+
+
+    if num_games == 1:
+    #Print Statistics
+        print(f"{away_t} inning stats:")
+        print(away_inning_stats)
+        print(f"\n{home_t} inning stats:")
+        print(home_inning_stats)
+
+        print(f"\n{away_t} player stats:")
+        print()
+        print(away_player_stats,'\n')
+
+        print(f"\n{home_t} player stats:")  
+        print()
+        print(home_player_stats,'\n')
+    
+    return(all_scores, home_player_stats, away_player_stats, home_inning_stats, away_inning_stats, br_table)
+
+###################################################################
+ 
+    
+def main():
+    
+    #Load data and select teams/order 
+    
+    file = xlrd.open_workbook('Player_Stats_2019.xlsx', on_demand=True)
+    avail_teams = file.sheet_names()
+    #avail_teams.remove('Read Me')
+    
+    runsim = False 
+    
+    while runsim == False:
+        # select the away team
+        print('Available teams: ',end='')
+        print(avail_teams)
+        while True:
+            away_team = input('Select away team: ').upper()
+            if(away_team in avail_teams):
+                away_players_full = pd.read_excel('Player_Stats_2019.xlsx',sheet_name = away_team, index_col = 'Name')
+                print('')
+                break
+            else:
+                print('Team not recognized, please select from this list: ', end = '')
+                print(avail_teams)
+        avail_teams.remove(away_team)
+        
+        # select the home team
+        print('Available teams: ',end='')
+        print(avail_teams)
+        while True:
+            home_team = input('Select home team: ').upper()
+            if(home_team in avail_teams):
+                home_players_full = pd.read_excel('Player_Stats_2019.xlsx',sheet_name = home_team, index_col = 'Name')
+                print('')
+                break
+            else:
+                print('Team not recognized, please select from this list: ', end = '')
+                print(avail_teams)
+    
+    
+        
+        # print teams
+        real_names = {'BOS':'Red Sox', 'HOU': 'Astros', 'TBR': 'Rays', 'NYY': 'Yankees', 'BAL': 'Orioles', 'OAK': 'Athletics', 'SEA': 'Mariners', 'LAA': 'Angels', 'TEX': 'Rangers', 'TOR': 'Blue Jays'}
+        print('The {} will play the {}!\n'.format(real_names[home_team], real_names[away_team]))
+    
+        # determine batting order for both teams
+        home_players = change_batting_order(real_names[home_team], home_players_full)
+        away_players = change_batting_order(real_names[away_team], away_players_full)
+        
+        while True:
+            try:
+                games = int(input('How many games would you like to simulate? '))
+                if games > 0:
+                    break
+            except:
+                print('Please enter a number greater than zero')
+    
+        # PLAY BALL ? 
+        
+        while True:
+            pb = input('(Play ball) or (Reset) lineup? ')
+            if pb.upper() == 'PLAY BALL':
+                runsim = True
+                break
+            elif pb.upper() == 'RESET':
+                print('Please select a new lineup:\n')
+                break
+            print('Please enter "Play Ball" or "Reset"')
+        
+    # Delay to "run" simulation
+    print('\nRunning game simulation...\n')
+    
+    final, home_player_stats, away_player_stats, home_inning_stats, away_inning_stats, baseball_table = full_game_simulation(games, real_names[away_team], real_names[home_team], home_players, away_players)
+       
+    # if multiple games ran, print summary output for all games
+    if games > 1:
+        
+        baseball_table['PA'] = (baseball_table['AB'] + baseball_table['BB'])
+        baseball_table['R/G'] = round((baseball_table['R'] / baseball_table['G']),2)
+
+        print(baseball_table)
+        avg_away = round(np.mean(final[real_names[away_team]]),2)
+        avg_home = round(np.mean(final[real_names[home_team]]),2)
+        print(f"\n{real_names[away_team]} average runs scored per game: {avg_away} runs")
+        print(f"{real_names[home_team]} average runs scored per game: {avg_home} runs")
+        
+        # calculate the number of wins for each team
+        h_wins = final.apply(lambda x: True if x['Winner'] == real_names[home_team] else False, axis = 1)
+        h_wins_count = len(h_wins[h_wins == True].index)
+        a_wins = final.apply(lambda x: True if x['Winner'] == real_names[away_team] else False, axis = 1)
+        a_wins_count = len(a_wins[a_wins == True].index)
+        tie = final.apply(lambda x: True if x['Winner'] == 'Tie' else False, axis = 1)
+        tie_count = len(tie[tie == True].index)
+        
+        print(f"\nThe {real_names[away_team]} won {a_wins_count} of {games} games")
+        print(f"The {real_names[home_team]} won {h_wins_count} of {games} games")
+        print(f"The teams tied {tie_count} of {games} games")
+        print('\nFinal scores for all games:')
+        print(final)
+
+if __name__ == '__main__':
+    main()
