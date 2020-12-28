@@ -1,3 +1,8 @@
+# Background 
+This is a code I wrote with my team partner for a Computational Modeling class in Fall of 2020. The purpose of the class was to use introductory Python skills in an Industrial Engineering application. We chose simulation as the IE concept and baseball as our topic. 
+
+The code is intended to be played as a game where the user can choose Home and Away team batting line ups and see how they fare across different matches.  
+
 # Set-up  
 1. Download player stats Excel File & Download code as .py - save in same location 
 2. Run code (use Spyder as part of the Anaconda environment for best results - any REPL that can accept input will work)
