@@ -1,5 +1,5 @@
 # Background 
-This is a code I wrote with my team partner for a Computational Modeling class in Fall of 2020. The purpose of the class was to use introductory Python skills in an Industrial Engineering application. We chose simulation as the IE concept and baseball as our topic. 
+This is a code I wrote with my team partner for a Computational Modeling class in the fall of 2020. The purpose of the class was to use introductory Python skills in an Industrial Engineering application. We chose simulation as the IE concept and baseball as our topic. 
 
 The code is intended to be played as a game where the user can choose Home and Away team batting line ups and see how they fare across different matches.  
 
