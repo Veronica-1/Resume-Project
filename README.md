@@ -1,5 +1,5 @@
 # Background 
-This is a code I wrote with my team partner for a Computational Modeling class during the Fall Semester of 2020. The purpose of the class was to use introductory Python skills for an Industrial Engineering application. We chose simulation as the IE concept and baseball as our topic. 
+This is a code I wrote with my team partner for a *Computational Modeling* class during the Fall Semester of 2020. The purpose of the class was to use introductory Python skills for an Industrial Engineering application. We chose simulation as the IE concept and baseball as our topic. 
 
 The code is intended to be played as a game where the user can choose Home and Away team batting line ups and see how they fare across different matches.  
 
@@ -34,8 +34,11 @@ However, using an average accounts for games against many types of pitchers, so 
 Because the inning function tracks player statistics are not reflected in the output if there are multiple games played, the game function directly prints those data frames to the user if the number of games is only 1. This is the only scenario in which this occurs because currently the player statistics are not individually tracked across all games. This could be done in future versions of the code, but it would likely be similar to the inputted batting averages from the historic data and might not offer new insight. 
 
 # Model Evaluation: 
-To evaluate that the model was running as intended, many games were run only once and each play was printed to the screen and manually tracked for scoring. The logic of the model did hold up under this test, so it was assumed to be sound for many repeated games. Additionally, the results for many iterations were compared with actual statistics like runs per game and it was often close to the season averages by team. However, some statistics were off with very high or low results such as unreasonably high home runs per season and unusually low number of triples hit. This is the nature of using statistics with no outside factors, some results will be well beyond the range of a normal game simply because they are statistically possible.
-Overall, the logic was sound within the assumption limitations, and the statistical irregularities were as expected, so the model was acceptable for the scope of the project.
+1. To evaluate that the model was running as intended, many games were run and each play was printed to the screen and manually tracked for scoring. The logic of the model held up under this test according to standard MLB rules, so it was assumed to be sound for many repeated games. 
+
+2. Aggregate results for many iterations were compared with actual statistics like runs per game and it was often close to the season averages by team. Some statistics were off with very high or low results like unreasonably high home runs per season and unusually low number of triples hit. This reflects the challenge of using pure statistics with no outside factors - some results will be well beyond the range of a normal game simply because they are statistically possible.
+
+_Conclusion_: The logic was sound within the assumption limitations and the statistical irregularities were as expected. The model is acceptable for the scope of the project.
 
 # Contact 
 You can reach me at linkedin.com/in/veronica-carmody with questions or comments - thank you :) 
